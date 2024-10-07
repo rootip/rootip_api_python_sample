@@ -1,0 +1,5 @@
+requests
+requests_pkcs12
+urllib3
+chardet
+colorama
