@@ -1,5 +1,13 @@
-requests
-requests_pkcs12
-urllib3
-chardet
-colorama
+# root ip APIサンプルの直接依存パッケージ（Python 3.11、バージョン固定）
+#
+# 推奨: SHA-256ハッシュ検証付きでインストールする場合は、
+# requirements-lock.txt を使用してください（README参照）。
+#   pip install --only-binary=:all: --require-hashes -r requirements-lock.txt
+#
+# バージョンを更新する場合は、公式PyPIで最新の安全なバージョンを確認し、
+# requirements-lock.txt のハッシュも合わせて更新してください。
+# 通常のインストールにはこのファイルではなく requirements-lock.txt を使用してください。
+
+requests==2.34.2
+requests_pkcs12==1.27
+colorama==0.4.6
