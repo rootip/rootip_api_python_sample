@@ -164,6 +164,7 @@ cython_debug/
 
 # rootip
 config/secrets.py
+config/secrets.*.py
 *.p12
 *.pfx
 *.pem
@@ -172,3 +173,7 @@ config/secrets.py
 *.crt
 myenv/
 tmp/
+*.env
+
+# AIコーディングツールのローカル設定（個人環境の許可設定等はコミットしない）
+.claude/settings.local.json

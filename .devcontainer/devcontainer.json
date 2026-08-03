@@ -9,7 +9,6 @@
       ]
     }
   },
-  "postCreateCommand": "pip install -r requirements.txt || true",
+  "postCreateCommand": "python -m pip install --only-binary=:all: --require-hashes -r requirements-lock.txt && python -m unittest discover -s tests",
   "features": {}
 }
-
