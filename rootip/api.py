@@ -289,10 +289,10 @@ def sanitize_csv_value(value):
 # JSONをCSV配列に変換する関数
 def json_to_csv_array(json_text):
     data = json.loads(json_text)
-    if not data:
-        raise ValueError("Error: 変換対象のデータがありません。")
     if not isinstance(data, list) or not all(isinstance(entry, dict) for entry in data):
         raise ValueError("Error: JSONはオブジェクトの配列である必要があります。")
+    if not data:
+        raise ValueError("Error: 変換対象のデータがありません。")
     if len(data) > MAX_JSON_RECORDS:
         raise ValueError(
             f"Error: 変換対象が上限{MAX_JSON_RECORDS}件を超えています。"
