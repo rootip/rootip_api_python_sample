@@ -12,10 +12,18 @@ import requests_pkcs12
 # 秘密情報の読み込み
 # config/secrets.py が未作成でも本モジュールの読み込み自体は失敗させず、
 # 実行時（check_secret）にわかりやすいエラーを表示する
+_secrets_import_error = None
 try:
     from config import secrets as _secrets
-except ImportError:
+except Exception as err:
     _secrets = None
+    _secrets_import_error = err
+
+SECRETS_FILE_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "config",
+    "secrets.py",
+)
 
 ROOTIP_USER_ID = getattr(_secrets, "ROOTIP_USER_ID", "")
 ROOTIP_API_KEY = getattr(_secrets, "ROOTIP_API_KEY", "")
@@ -58,10 +66,16 @@ def handle_secret_exception(exception):
 def check_secret():
     try:
         if _secrets is None:
-            raise ValueError(
-                "Error: config/secrets.py が見つかりません。"
-                "config/secrets.py.template をコピーして config/secrets.py を作成してください。"
-            )
+            if os.path.isfile(SECRETS_FILE_PATH):
+                raise ValueError(
+                    "Error: config/secrets.py を読み込めません。"
+                    "Pythonの構文と設定変数を確認してください。"
+                ) from _secrets_import_error
+            else:
+                raise ValueError(
+                    "Error: config/secrets.py が見つかりません。"
+                    "config/secrets.py.template をコピーして config/secrets.py を作成してください。"
+                )
 
         essential_secrets = {
             "ROOTIP_USER_ID": ROOTIP_USER_ID,
@@ -323,10 +337,10 @@ def json_to_csv_array(json_text):
 def json_to_csv_file(json_text, file_path):
     # JSON テキストをデコードしてデータを取得
     data = json.loads(json_text)
-    if not data:
-        raise ValueError("Error: 変換対象のデータがありません。")
     if not isinstance(data, list) or not all(isinstance(entry, dict) for entry in data):
         raise ValueError("Error: JSONはオブジェクトの配列である必要があります。")
+    if not data:
+        raise ValueError("Error: 変換対象のデータがありません。")
     if len(data) > MAX_JSON_RECORDS:
         raise ValueError(
             f"Error: 変換対象が上限{MAX_JSON_RECORDS}件を超えています。"

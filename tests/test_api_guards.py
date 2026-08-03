@@ -272,6 +272,30 @@ class TestCsvInjectionGuard(unittest.TestCase):
             mode = stat.S_IMODE(os.stat(file_path).st_mode)
             self.assertEqual(mode, 0o600)
 
+    def test_json_to_csv_file_reports_invalid_object_shape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            file_path = os.path.join(directory, "output.csv")
+            with self.assertRaisesRegex(ValueError, "オブジェクトの配列"):
+                json_to_csv_file("{}", file_path)
+            self.assertFalse(os.path.exists(file_path))
+
+
+class TestSecretValidation(unittest.TestCase):
+    def test_existing_but_invalid_secrets_file_reports_load_error(self):
+        with (
+            mock.patch.object(api_module, "_secrets", None),
+            mock.patch.object(
+                api_module, "_secrets_import_error", SyntaxError("fictional error")
+            ),
+            mock.patch.object(api_module.os.path, "isfile", return_value=True),
+            mock.patch.object(api_module, "handle_secret_exception") as handler,
+        ):
+            api_module.check_secret()
+
+        error = handler.call_args.args[0]
+        self.assertIsInstance(error, ValueError)
+        self.assertIn("読み込めません", str(error))
+
 
 class TestExternalCurrencyCsvGuard(unittest.TestCase):
     class FakeResponse:
