@@ -168,7 +168,6 @@ def _load_limited_response_content(response):
             continue
         received += len(chunk)
         if received > MAX_RESPONSE_BYTES:
-            response.close()
             raise ValueError(
                 f"Error: APIレスポンスが上限{MAX_RESPONSE_BYTES}バイトを超えました。"
             )
@@ -245,16 +244,21 @@ def make_request(method, endpoint, data=None, accept=None):
             else:
                 raise RuntimeError("Error: クライアント証明書が設定されていません。")
 
-            # 予期しないリダイレクト応答は追跡せずエラーにする
-            if 300 <= response.status_code < 400:
-                raise requests.exceptions.HTTPError(
-                    f"Unexpected redirect response: {response.status_code}",
-                    response=response,
-                )
+            try:
+                # 予期しないリダイレクト応答は追跡せずエラーにする
+                if 300 <= response.status_code < 400:
+                    raise requests.exceptions.HTTPError(
+                        f"Unexpected redirect response: {response.status_code}",
+                        response=response,
+                    )
 
-            # ステータスコードが4xxまたは5xxの場合、本文を表示せず例外にする
-            response.raise_for_status()
-            _load_limited_response_content(response)
+                # ステータスコードが4xxまたは5xxの場合、本文を表示せず例外にする
+                response.raise_for_status()
+                _load_limited_response_content(response)
+            finally:
+                # stream=Trueでは、成功・HTTPエラー・読み込み中断の全経路で
+                # close()しないと接続が解放されないため必ず閉じる
+                response.close()
 
         return response
     except requests.exceptions.SSLError:
