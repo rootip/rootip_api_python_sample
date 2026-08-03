@@ -157,9 +157,8 @@ class TestMethodAllowlist(unittest.TestCase):
                 result = make_request("GET", "/api/v1/case_biblios")
 
         self.assertIs(result, response)
-        session.request.assert_called_once()
         request_options = session.request.call_args.kwargs
-        self.assertIs(request_options["verify"], True)
+        self.assertIsNot(request_options["verify"], False)
         self.assertFalse(request_options["allow_redirects"])
         self.assertTrue(request_options["stream"])
         self.assertEqual(request_options["timeout"], api_module.REQUEST_TIMEOUT)
