@@ -162,6 +162,56 @@ class TestMethodAllowlist(unittest.TestCase):
         self.assertFalse(request_options["allow_redirects"])
         self.assertTrue(request_options["stream"])
         self.assertEqual(request_options["timeout"], api_module.REQUEST_TIMEOUT)
+        response.close.assert_called_once()
+
+    def test_redirect_response_is_closed_before_error(self):
+        response = mock.Mock(status_code=302)
+        session = mock.MagicMock()
+        session.__enter__.return_value = session
+        session.request.return_value = response
+
+        with (
+            mock.patch.object(api_module, "check_secret"),
+            mock.patch.object(
+                api_module,
+                "normalize_url",
+                return_value="https://example.rootip-cloud.net/api/v1/test",
+            ),
+            mock.patch.object(
+                api_module, "ROOTIP_CLIENT_CERTIFICATE_PEM", "fictional-cert.pem"
+            ),
+            mock.patch.object(api_module.requests, "Session", return_value=session),
+            self.assertRaises(api_module.requests.exceptions.HTTPError),
+        ):
+            make_request("GET", "/api/v1/test")
+
+        response.close.assert_called_once()
+
+    def test_http_error_response_is_closed(self):
+        response = mock.Mock(status_code=500)
+        response.raise_for_status.side_effect = (
+            api_module.requests.exceptions.HTTPError(response=response)
+        )
+        session = mock.MagicMock()
+        session.__enter__.return_value = session
+        session.request.return_value = response
+
+        with (
+            mock.patch.object(api_module, "check_secret"),
+            mock.patch.object(
+                api_module,
+                "normalize_url",
+                return_value="https://example.rootip-cloud.net/api/v1/test",
+            ),
+            mock.patch.object(
+                api_module, "ROOTIP_CLIENT_CERTIFICATE_PEM", "fictional-cert.pem"
+            ),
+            mock.patch.object(api_module.requests, "Session", return_value=session),
+            self.assertRaises(api_module.requests.exceptions.HTTPError),
+        ):
+            make_request("GET", "/api/v1/test")
+
+        response.close.assert_called_once()
 
     def test_oversized_api_response_is_rejected(self):
         response = mock.Mock()
@@ -171,7 +221,6 @@ class TestMethodAllowlist(unittest.TestCase):
             self.assertRaises(ValueError),
         ):
             api_module._load_limited_response_content(response)
-        response.close.assert_called_once()
 
 
 class TestCsvInjectionGuard(unittest.TestCase):
